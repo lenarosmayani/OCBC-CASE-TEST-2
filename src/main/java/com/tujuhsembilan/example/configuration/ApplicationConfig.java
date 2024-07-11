@@ -74,7 +74,11 @@ public class ApplicationConfig {
         .authorizeHttpRequests(req -> req
             .requestMatchers(AntPathRequestMatcher.antMatcher("/auth/jwks.json")).permitAll()
             .requestMatchers(AntPathRequestMatcher.antMatcher("/auth/login")).permitAll()
-            .anyRequest().authenticated())
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/sample/data-a")).hasAuthority("ROLE_A")
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/sample/data-b")).hasAuthority("ROLE_B")
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/sample/data-c")).hasAnyAuthority("ROLE_A", "ROLE_B")
+        )
+        
         // Authorization (DEFAULT IN MEM)
         .userDetailsService(new InMemoryUserDetailsManager(
             User.builder()
@@ -93,14 +97,16 @@ public class ApplicationConfig {
                 .build()))
         .httpBasic(Customizer.withDefaults())
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        
         // Authentication
         .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))
+        
         // Miscellaneous
         .csrf(AbstractHttpConfigurer::disable);
-
+  
     return http.build();
   }
-
+  
   @Bean
   public ECKey ecJwk() throws IOException, ParseException {
     try (var in = new FileInputStream(ResourceUtils.getFile("classpath:key/ES512.json"))) {
